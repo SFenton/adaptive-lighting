@@ -46,6 +46,7 @@
           "brightness_mode": "亮度模式(brightness_mode)",
           "brightness_mode_time_dark": "变暗时间(brightness_mode_time_dark)",
           "brightness_mode_time_light": "变亮时间(brightness_mode_time_light)",
+          "invert_brightness": "invert_brightness: Invert the brightness adaptation: lights will be dimmer during the day and brighter at night. Useful for rooms with lots of natural light. 🔄",
           "take_over_control": "take_over_control: 如果在灯光处于开启并处于适应照明的状态时，另一个来源调用`light.turn_on`，则禁用自适应照明。请注意，这会在每个`interval`调用`homeassistant.update_entity`！🔒",
           "detect_non_ha_changes": "detect_non_ha_changes: 检测非`light.turn_on`的状态更改，并停止自适应照明。需要启用`take_over_control`。🕵️ 注意：⚠️ 一些灯光可能错误地显示为“开启”状态，这可能会导致灯光意外打开。如果遇到此类问题，请禁用此功能。",
           "autoreset_control_seconds": "自动重置时间(autoreset_control_seconds)",
@@ -79,6 +80,7 @@
           "brightness_mode": "要使用的亮度模式。可能的值为`default`、`linear`和`tanh`（使用`brightness_mode_time_dark`和`brightness_mode_time_light`）。📈",
           "brightness_mode_time_dark": "（如果`brightness_mode='default'`将被忽略）日出/日落之前/之后亮度逐渐增加/减少的持续时间，以秒为单位。📈📉",
           "brightness_mode_time_light": "（如果`brightness_mode='default'`将被忽略）日出/日落之后/之前亮度逐渐增加/减少的持续时间，以秒为单位。📈📉。",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "autoreset_control_seconds": "在若干秒后自动重置手动控制。设置为0以禁用。⏲️",
           "send_split_delay": "对于不支持同时设置亮度和颜色的灯光，`separate_turn_on_commands`之间的延迟时间（毫秒）。⏲️",
           "adapt_delay": "灯光打开和自适应照明应用更改之间的等待时间（秒）。可能有助于避免闪烁。⏲️"

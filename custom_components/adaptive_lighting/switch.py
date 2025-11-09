@@ -104,7 +104,11 @@ from .const import (
     CONF_BRIGHTNESS_MODE_TIME_DARK,
     CONF_BRIGHTNESS_MODE_TIME_LIGHT,
     CONF_DETECT_NON_HA_CHANGES,
+    CONF_INVERT_BRIGHTNESS,
     CONF_INCLUDE_CONFIG_IN_ATTRIBUTES,
+    CONF_LUX_MAX,
+    CONF_LUX_MIN,
+    CONF_LUX_SENSOR,
     CONF_INITIAL_TRANSITION,
     CONF_INTERCEPT,
     CONF_INTERVAL,
@@ -911,6 +915,10 @@ class AdaptiveSwitch(SwitchEntity, RestoreEntity):
             brightness_mode=data[CONF_BRIGHTNESS_MODE],
             brightness_mode_time_dark=data[CONF_BRIGHTNESS_MODE_TIME_DARK],
             brightness_mode_time_light=data[CONF_BRIGHTNESS_MODE_TIME_LIGHT],
+            invert_brightness=data[CONF_INVERT_BRIGHTNESS],
+            lux_sensor=data[CONF_LUX_SENSOR],
+            lux_min=data[CONF_LUX_MIN],
+            lux_max=data[CONF_LUX_MAX],
             timezone=zoneinfo.ZoneInfo(self.hass.config.time_zone),
         )
         _LOGGER.debug(
@@ -1140,6 +1148,55 @@ class AdaptiveSwitch(SwitchEntity, RestoreEntity):
             force=False,
         )
 
+    def _get_lux_reading(self) -> float | None:
+        """Read the current lux value from the configured sensor.
+        
+        Returns:
+            The lux reading as a float, or None if:
+            - No lux sensor is configured
+            - Sensor state is unavailable or unknown
+            - Sensor state cannot be parsed as a float
+        """
+        if self._sun_light_settings.lux_sensor is None:
+            return None
+        
+        state = self.hass.states.get(self._sun_light_settings.lux_sensor)
+        if state is None:
+            _LOGGER.warning(
+                "%s: Lux sensor '%s' not found",
+                self._name,
+                self._sun_light_settings.lux_sensor,
+            )
+            return None
+        
+        if state.state in ("unknown", "unavailable"):
+            _LOGGER.debug(
+                "%s: Lux sensor '%s' is %s, falling back to sun-based adaptation",
+                self._name,
+                self._sun_light_settings.lux_sensor,
+                state.state,
+            )
+            return None
+        
+        try:
+            lux_value = float(state.state)
+            _LOGGER.debug(
+                "%s: Read lux value %.1f from sensor '%s'",
+                self._name,
+                lux_value,
+                self._sun_light_settings.lux_sensor,
+            )
+            return lux_value
+        except (ValueError, TypeError) as err:
+            _LOGGER.warning(
+                "%s: Failed to parse lux sensor '%s' state '%s' as float: %s",
+                self._name,
+                self._sun_light_settings.lux_sensor,
+                state.state,
+                err,
+            )
+            return None
+
     async def prepare_adaptation_data(
         self,
         light: str,
@@ -1169,10 +1226,20 @@ class AdaptiveSwitch(SwitchEntity, RestoreEntity):
             )
             return None
 
+        # Read lux sensor if configured
+        lux_reading = self._get_lux_reading()
+        if lux_reading is not None:
+            _LOGGER.debug(
+                "%s: Using lux-based adaptation with reading %.1f lux",
+                self._name,
+                lux_reading,
+            )
+
         # The switch might be off and not have _settings set.
         self._settings = self._sun_light_settings.get_settings(
             self.sleep_mode_switch.is_on,
             transition,
+            lux_reading,
         )
 
         # Build service data.

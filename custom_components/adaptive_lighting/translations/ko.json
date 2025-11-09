@@ -46,6 +46,7 @@
           "brightness_mode": "밝기 모드",
           "brightness_mode_time_dark": "어두울 때 밝기 모드 시간",
           "brightness_mode_time_light": "밝을 때 밝기 모드 시간",
+          "invert_brightness": "invert_brightness: Invert the brightness adaptation: lights will be dimmer during the day and brighter at night. Useful for rooms with lots of natural light. 🔄",
           "take_over_control": "제어 인계: 다른 소스가 조명이 켜져 있고 조정 중일 때 `light.turn_on`을 호출하면 적응형 조명을 비활성화합니다. 이는 매 `간격`마다 `homeassistant.update_entity`를 호출합니다! 🔒",
           "detect_non_ha_changes": "비HA 변경 감지: `light.turn_on`이 아닌 상태 변경을 감지하고 조정을 중단합니다. `take_over_control`이 활성화되어 있어야 합니다. 🕵️ 주의: ⚠️ 일부 조명은 잘못된 '켜짐' 상태를 나타낼 수 있으며, 이로 인해 조명이 예상치 못하게 켜질 수 있습니다. 이러한 문제가 발생하면 이 기능을 비활성화하세요.",
           "autoreset_control_seconds": "자동 제어 리셋 초",
@@ -79,6 +80,7 @@
           "brightness_mode": "사용할 밝기 모드. 가능한 값은 `default`, `linear`, `tanh` (uses `brightness_mode_time_dark` and `brightness_mode_time_light`). 📈",
           "brightness_mode_time_dark": "(`brightness_mode='default'`인 경우 무시됨) 일출/일몰 전/후에 밝기를 높이거나 낮추는 데 걸리는 시간, 초 단위. 📈📉",
           "brightness_mode_time_light": "(`brightness_mode='default'`인 경우 무시됨) 일출/일몰 후/전에 밝기를 높이거나 낮추는 데 걸리는 시간, 초 단위. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "autoreset_control_seconds": "특정 초 후에 수동 제어를 자동으로 재설정. 0으로 설정하면 비활성화됩니다. ⏲️",
           "send_split_delay": "`separate_turn_on_commands`에 대한 호출 사이의 지연 시간(밀리초)으로, 밝기와 색상을 동시에 설정하지 않는 조명에 대한 지연. ⏲️",
           "adapt_delay": "조명을 켠 후 적응형 조명이 변경 사항을 적용하기까지의 대기 시간(초). 깜박임을 피하는 데 도움이 될 수 있습니다. ⏲️"

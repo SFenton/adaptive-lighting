@@ -183,6 +183,30 @@ DOCS[CONF_BRIGHTNESS_MODE_TIME_LIGHT] = (
     "the brightness after/before sunrise/sunset. 📈📉."
 )
 
+CONF_INVERT_BRIGHTNESS, DEFAULT_INVERT_BRIGHTNESS = "invert_brightness", False
+DOCS[CONF_INVERT_BRIGHTNESS] = (
+    "Invert the brightness adaptation: lights will be dimmer during the day and "
+    "brighter at night. Useful for rooms with lots of natural light. 🔄"
+)
+
+CONF_LUX_SENSOR, DEFAULT_LUX_SENSOR = "lux_sensor", None
+DOCS[CONF_LUX_SENSOR] = (
+    "Optional: Use an ambient light sensor (lux) instead of sun position for adaptation. "
+    "When configured, the sensor completely replaces sun-based calculations. 💡"
+)
+
+CONF_LUX_MIN, DEFAULT_LUX_MIN = "lux_min", 0
+DOCS[CONF_LUX_MIN] = (
+    "Minimum lux level. Below this value, lights will be at maximum brightness. "
+    "Only used when lux_sensor is configured. 🌑"
+)
+
+CONF_LUX_MAX, DEFAULT_LUX_MAX = "lux_max", 1000
+DOCS[CONF_LUX_MAX] = (
+    "Maximum lux level. Above this value, lights will be at minimum brightness. "
+    "Only used when lux_sensor is configured. 🌞"
+)
+
 CONF_TAKE_OVER_CONTROL, DEFAULT_TAKE_OVER_CONTROL = "take_over_control", True
 DOCS[CONF_TAKE_OVER_CONTROL] = (
     "Disable Adaptive Lighting if another source calls `light.turn_on` while lights "
@@ -347,6 +371,16 @@ VALIDATION_TUPLES = [
     ),
     (CONF_BRIGHTNESS_MODE_TIME_DARK, DEFAULT_BRIGHTNESS_MODE_TIME_DARK, int),
     (CONF_BRIGHTNESS_MODE_TIME_LIGHT, DEFAULT_BRIGHTNESS_MODE_TIME_LIGHT, int),
+    (CONF_INVERT_BRIGHTNESS, DEFAULT_INVERT_BRIGHTNESS, bool),
+    (
+        CONF_LUX_SENSOR,
+        DEFAULT_LUX_SENSOR,
+        selector.EntitySelector(
+            selector.EntitySelectorConfig(domain="sensor"),
+        ),
+    ),
+    (CONF_LUX_MIN, DEFAULT_LUX_MIN, int_between(0, 100000)),
+    (CONF_LUX_MAX, DEFAULT_LUX_MAX, int_between(0, 100000)),
     (CONF_TAKE_OVER_CONTROL, DEFAULT_TAKE_OVER_CONTROL, bool),
     (CONF_DETECT_NON_HA_CHANGES, DEFAULT_DETECT_NON_HA_CHANGES, bool),
     (

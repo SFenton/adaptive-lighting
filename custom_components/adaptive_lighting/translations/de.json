@@ -68,6 +68,7 @@
           "min_sunrise_time": "Lege die früheste virtuelle Sonnenaufgangszeit (HH:MM:SS) fest, um einen späteren Sonnenaufgang zu ermöglichen. 🌅",
           "interval": "Häufigkeit der Lichtanpassung in Sekunden. 🔄",
           "brightness_mode_time_light": "(Wird ignoriert, wenn `brightness_mode='default'`) Die Dauer in Sekunden, um die Helligkeit nach/vor Sonnenaufgang/Sonnenuntergang hoch/runter zu fahren. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "brightness_mode_time_dark": "(Wird ignoriert, wenn `brightness_mode='default'`) Die Dauer in Sekunden, um die Helligkeit vor/nach Sonnenaufgang/Sonnenuntergang hoch/runter zu fahren. 📈📉.",
           "autoreset_control_seconds": "Setzt die manuelle Steuerung nach einer bestimmten Anzahl von Sekunden automatisch zurück. Zum Deaktivieren auf 0 setzen. ⏲️",
           "sleep_brightness": "Helligkeit der Lichter im Schlafmodus in Prozent. 😴",

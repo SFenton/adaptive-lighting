@@ -17,6 +17,7 @@
           "transition": "Az transition időtartama, amikor a lights változnak, másodpercben. 🕑",
           "brightness_mode": "Használandó fényerő üzemmód. A lehetséges értékek: `default`, `linear` és `tanh` (a `brightness_mode_time_dark` és `brightness_mode_time_light` értékeket használja). 📈",
           "brightness_mode_time_light": "(Figyelmen kívül hagyva, ha `brightness_mode='default'`) A fényerő növelésének/csökkentésének időtartama másodpercben napfelkelte/napnyugta után/előtt. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sunset_offset": "A naplemente idejének beállítása pozitív vagy negatív eltolással másodpercekben. ⏰",
           "sunset_time": "Állítson be egy fix időpontot (HH:MM:SS) a naplementéhez. 🌇",
           "max_sunset_time": "A legkésőbbi virtuális napnyugta időpontjának beállítása (HH:MM:SS), amely lehetővé teszi a korábbi naplementéket. 🌇",

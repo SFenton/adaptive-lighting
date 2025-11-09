@@ -64,6 +64,7 @@
           "transition": "Durata della transizione quando le luci cambiano, espressa in secondi. 🕑",
           "brightness_mode": "Modalità per la luminosità da utilizzare. I valori possibili sono `default`, `linear`, and `tanh` (usa`brightness_mode_time_dark` e `brightness_mode_time_light`). 📈",
           "brightness_mode_time_light": "La durata, espressa in secondi, della variazione di luminosità durante le albe/tramonti (ignorato se `brightness_mode='default'`). 📈📉",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sunset_time": "Imposta un orario fisso (HH:MM:SS) per  il tramonto. 🌇",
           "max_sunset_time": "Imposta il massimo orario per il tramonto (HH:MM:SS), in modo da eventualmente anticiparlo. 🌇",
           "sunrise_time": "Imposta un orario fisso (HH:MM:SS) per l'alba. 🌅",

@@ -34,6 +34,7 @@ from homeassistant.components.adaptive_lighting.const import (
     CONF_BRIGHTNESS_MODE_TIME_DARK,
     CONF_BRIGHTNESS_MODE_TIME_LIGHT,
     CONF_DETECT_NON_HA_CHANGES,
+    CONF_INVERT_BRIGHTNESS,
     CONF_INITIAL_TRANSITION,
     CONF_MANUAL_CONTROL,
     CONF_MAX_BRIGHTNESS,
@@ -2266,3 +2267,524 @@ async def test_brightness_mode(hass, brightness_mode, dark, light):
     # After sunrise the brightness should be light_brightness
     await patch_time_and_update(after_sunrise)
     assert is_approx_equal(switch._settings[ATTR_BRIGHTNESS_PCT], light_brightness)
+
+
+async def test_invert_brightness_configuration(hass):
+    """Test that invert_brightness configuration is loaded and applied."""
+    from homeassistant.components.adaptive_lighting.const import CONF_INVERT_BRIGHTNESS
+
+    # Setup with invert_brightness enabled
+    _, switch = await setup_switch(hass, {CONF_INVERT_BRIGHTNESS: True})
+
+    # Verify the setting was loaded
+    assert switch._sun_light_settings.invert_brightness is True
+
+    # Setup without invert_brightness (default)
+    _, switch_normal = await setup_switch(hass, {CONF_INVERT_BRIGHTNESS: False})
+    assert switch_normal._sun_light_settings.invert_brightness is False
+
+
+async def test_invert_brightness_behavior(hass):
+    """Test that brightness is correctly inverted during day/night."""
+    from homeassistant.components.adaptive_lighting.const import CONF_INVERT_BRIGHTNESS
+
+    # Setup normal switch
+    (light_normal, *_) = await setup_lights(hass, create_second_instance=False)
+    _, switch_normal = await setup_switch(
+        hass,
+        {
+            CONF_INVERT_BRIGHTNESS: False,
+            CONF_INITIAL_TRANSITION: 0,
+            CONF_TRANSITION: 0,
+        },
+    )
+
+    # Setup inverted switch with different name
+    (light_inverted, *_) = await setup_lights(
+        hass, create_second_instance=True, name_prefix="inverted_"
+    )
+    _, switch_inverted = await setup_switch(
+        hass,
+        {
+            CONF_INVERT_BRIGHTNESS: True,
+            CONF_INITIAL_TRANSITION: 0,
+            CONF_TRANSITION: 0,
+        },
+        name="inverted",
+    )
+
+    # Patch time to noon (bright time for normal, dim for inverted)
+    noon = switch_normal._sun_light_settings.sun.noon(datetime.date.today())
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = noon
+
+        # Update both switches
+        context_normal = switch_normal.create_context("test")
+        await switch_normal._update_attrs_and_maybe_adapt_lights(context=context_normal)
+        await hass.async_block_till_done()
+
+        context_inverted = switch_inverted.create_context("test")
+        await switch_inverted._update_attrs_and_maybe_adapt_lights(
+            context=context_inverted
+        )
+        await hass.async_block_till_done()
+
+        # Normal switch at noon should be at max brightness (100)
+        assert switch_normal._settings[ATTR_BRIGHTNESS_PCT] == 100
+
+        # Inverted switch at noon should be at min brightness (1)
+        assert switch_inverted._settings[ATTR_BRIGHTNESS_PCT] == 1
+
+    # Patch time to midnight (dim time for normal, bright for inverted)
+    midnight = switch_normal._sun_light_settings.sun.midnight(datetime.date.today())
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = midnight
+
+        # Update both switches
+        context_normal = switch_normal.create_context("test")
+        await switch_normal._update_attrs_and_maybe_adapt_lights(context=context_normal)
+        await hass.async_block_till_done()
+
+        context_inverted = switch_inverted.create_context("test")
+        await switch_inverted._update_attrs_and_maybe_adapt_lights(
+            context=context_inverted
+        )
+        await hass.async_block_till_done()
+
+        # Normal switch at midnight should be at min brightness (1)
+        assert switch_normal._settings[ATTR_BRIGHTNESS_PCT] == 1
+
+        # Inverted switch at midnight should be at max brightness (100)
+        assert switch_inverted._settings[ATTR_BRIGHTNESS_PCT] == 100
+
+
+async def test_invert_brightness_change_switch_settings(hass):
+    """Test changing invert_brightness via service call."""
+    from homeassistant.components.adaptive_lighting.const import CONF_INVERT_BRIGHTNESS
+
+    switch, (_, _, light) = await setup_lights_and_switch(hass)
+
+    async def change_switch_settings(**kwargs):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_CHANGE_SWITCH_SETTINGS,
+            {
+                ATTR_ENTITY_ID: ENTITY_SWITCH,
+                **kwargs,
+            },
+            blocking=True,
+        )
+        await hass.async_block_till_done()
+
+    # Test initial state (default should be False)
+    assert switch._sun_light_settings.invert_brightness is False
+
+    # Change to True
+    await change_switch_settings(**{CONF_INVERT_BRIGHTNESS: True})
+    assert switch._sun_light_settings.invert_brightness is True
+
+    # Change back to False
+    await change_switch_settings(**{CONF_INVERT_BRIGHTNESS: False})
+    assert switch._sun_light_settings.invert_brightness is False
+
+
+async def test_invert_brightness_with_all_brightness_modes(hass):
+    """Test that invert_brightness works with all brightness modes."""
+    from homeassistant.components.adaptive_lighting.const import CONF_INVERT_BRIGHTNESS
+
+    for mode in ["default", "linear", "tanh"]:
+        _, switch = await setup_switch(
+            hass,
+            {
+                CONF_INVERT_BRIGHTNESS: True,
+                CONF_BRIGHTNESS_MODE: mode,
+                CONF_INITIAL_TRANSITION: 0,
+                CONF_TRANSITION: 0,
+            },
+            name=f"test_{mode}",
+        )
+
+        # Test at noon
+        noon = switch._sun_light_settings.sun.noon(datetime.date.today())
+        with patch(
+            "homeassistant.components.adaptive_lighting.switch.dt_util.utcnow"
+        ) as mock_utcnow:
+            mock_utcnow.return_value = noon
+            context = switch.create_context("test")
+            await switch._update_attrs_and_maybe_adapt_lights(context=context)
+            await hass.async_block_till_done()
+
+            # At noon with inversion, brightness should be low (close to min_brightness)
+            # Allow some tolerance for different modes
+            assert switch._settings[ATTR_BRIGHTNESS_PCT] <= 10
+
+
+async def test_invert_brightness_does_not_affect_sleep_mode(hass):
+    """Test that sleep mode overrides invert_brightness."""
+    from homeassistant.components.adaptive_lighting.const import CONF_INVERT_BRIGHTNESS
+
+    _, switch = await setup_switch(
+        hass,
+        {
+            CONF_INVERT_BRIGHTNESS: True,
+            CONF_INITIAL_TRANSITION: 0,
+            CONF_TRANSITION: 0,
+        },
+    )
+
+    # Enable sleep mode
+    sleep_switch = hass.states.get(f"{SLEEP_MODE_SWITCH}.{DEFAULT_NAME}")
+    await hass.services.async_call(
+        "switch",
+        "turn_on",
+        {ATTR_ENTITY_ID: sleep_switch.entity_id},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+
+    # Test at noon (normally would be dim with inversion)
+    noon = switch._sun_light_settings.sun.noon(datetime.date.today())
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = noon
+        context = switch.create_context("test")
+        await switch._update_attrs_and_maybe_adapt_lights(context=context)
+        await hass.async_block_till_done()
+
+        # Sleep mode should use sleep_brightness regardless of inversion
+        assert switch._settings[ATTR_BRIGHTNESS_PCT] == DEFAULT_SLEEP_BRIGHTNESS
+
+
+async def test_lux_sensor_configuration(hass):
+    """Test that lux sensor configuration is loaded correctly."""
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: ["light.test"],
+        CONF_LUX_SENSOR: "sensor.ambient_light",
+        CONF_LUX_MIN: 50,
+        CONF_LUX_MAX: 800,
+    }
+    
+    switch = await setup_switch(hass, config)
+    assert switch._sun_light_settings.lux_sensor == "sensor.ambient_light"
+    assert switch._sun_light_settings.lux_min == 50
+    assert switch._sun_light_settings.lux_max == 800
+
+
+async def test_lux_sensor_reading(hass):
+    """Test reading lux value from sensor."""
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    # Set up lux sensor state
+    hass.states.async_set("sensor.lux", "300.5")
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: ["light.test"],
+        CONF_LUX_SENSOR: "sensor.lux",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # Test reading the sensor
+    lux_reading = switch._get_lux_reading()
+    assert lux_reading == 300.5
+
+
+async def test_lux_sensor_unavailable(hass):
+    """Test fallback when lux sensor is unavailable."""
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    # Set up lux sensor as unavailable
+    hass.states.async_set("sensor.lux", "unavailable")
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: ["light.test"],
+        CONF_LUX_SENSOR: "sensor.lux",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # Should return None when unavailable
+    lux_reading = switch._get_lux_reading()
+    assert lux_reading is None
+
+
+async def test_lux_sensor_invalid_state(hass):
+    """Test handling of invalid (non-numeric) sensor state."""
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    # Set up lux sensor with invalid state
+    hass.states.async_set("sensor.lux", "not_a_number")
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: ["light.test"],
+        CONF_LUX_SENSOR: "sensor.lux",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # Should return None when state can't be parsed
+    lux_reading = switch._get_lux_reading()
+    assert lux_reading is None
+
+
+async def test_lux_sensor_not_found(hass):
+    """Test handling when lux sensor entity doesn't exist."""
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    # Don't create the sensor entity
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: ["light.test"],
+        CONF_LUX_SENSOR: "sensor.nonexistent",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # Should return None when sensor not found
+    lux_reading = switch._get_lux_reading()
+    assert lux_reading is None
+
+
+async def test_lux_adaptation_overrides_sun(hass):
+    """Test that lux sensor overrides sun-based calculation."""
+    import datetime
+    from unittest.mock import patch
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    # Set up lux sensor with high reading (should result in low brightness)
+    hass.states.async_set("sensor.lux", "900")
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: [],
+        CONF_LUX_SENSOR: "sensor.lux",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+        CONF_MIN_BRIGHTNESS: 10,
+        CONF_MAX_BRIGHTNESS: 100,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # Mock it being noon (normally high brightness with sun)
+    noon = switch._sun_light_settings.sun.noon(datetime.date.today())
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = noon
+        context = switch.create_context("test")
+        await switch._update_attrs_and_maybe_adapt_lights(context=context)
+        await hass.async_block_till_done()
+        
+        # With lux at 900/1000, brightness should be low (near 10%)
+        # even though it's noon
+        brightness_pct = switch._settings[ATTR_BRIGHTNESS_PCT]
+        assert brightness_pct < 20  # Should be much lower than max
+
+
+async def test_lux_adaptation_low_light(hass):
+    """Test lux adaptation in low light conditions."""
+    import datetime
+    from unittest.mock import patch
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    # Set up lux sensor with low reading (should result in high brightness)
+    hass.states.async_set("sensor.lux", "50")
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: [],
+        CONF_LUX_SENSOR: "sensor.lux",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+        CONF_MIN_BRIGHTNESS: 10,
+        CONF_MAX_BRIGHTNESS: 100,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # Mock it being midnight (normally low brightness with sun)
+    midnight = switch._sun_light_settings.sun.midnight(datetime.date.today())
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = midnight
+        context = switch.create_context("test")
+        await switch._update_attrs_and_maybe_adapt_lights(context=context)
+        await hass.async_block_till_done()
+        
+        # With lux at 50/1000, brightness should be high
+        # even though it's midnight
+        brightness_pct = switch._settings[ATTR_BRIGHTNESS_PCT]
+        assert brightness_pct > 90  # Should be near max
+
+
+async def test_lux_with_inversion(hass):
+    """Test lux-based adaptation with brightness inversion enabled."""
+    import datetime
+    from unittest.mock import patch
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+        CONF_INVERT_BRIGHTNESS,
+    )
+    
+    # Set up lux sensor with low reading
+    hass.states.async_set("sensor.lux", "100")
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: [],
+        CONF_LUX_SENSOR: "sensor.lux",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+        CONF_MIN_BRIGHTNESS: 10,
+        CONF_MAX_BRIGHTNESS: 100,
+        CONF_INVERT_BRIGHTNESS: True,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    noon = switch._sun_light_settings.sun.noon(datetime.date.today())
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = noon
+        context = switch.create_context("test")
+        await switch._update_attrs_and_maybe_adapt_lights(context=context)
+        await hass.async_block_till_done()
+        
+        # With lux at 100/1000 (~10%), normal brightness would be ~91%
+        # With inversion, should be ~19%
+        brightness_pct = switch._settings[ATTR_BRIGHTNESS_PCT]
+        assert 15 < brightness_pct < 25
+
+
+async def test_lux_change_switch_settings(hass):
+    """Test changing lux configuration via service call."""
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+        SERVICE_CHANGE_SWITCH_SETTINGS,
+    )
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: [],
+        CONF_LUX_SENSOR: None,
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # Initially no sensor configured
+    assert switch._sun_light_settings.lux_sensor is None
+    
+    # Change lux settings via service
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_CHANGE_SWITCH_SETTINGS,
+        {
+            ATTR_ENTITY_ID: switch.entity_id,
+            CONF_LUX_SENSOR: "sensor.new_lux",
+            CONF_LUX_MIN: 100,
+            CONF_LUX_MAX: 500,
+        },
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    
+    # Settings should be updated
+    assert switch._sun_light_settings.lux_sensor == "sensor.new_lux"
+    assert switch._sun_light_settings.lux_min == 100
+    assert switch._sun_light_settings.lux_max == 500
+
+
+async def test_lux_fallback_when_sensor_becomes_unavailable(hass):
+    """Test fallback to sun when lux sensor becomes unavailable."""
+    import datetime
+    from unittest.mock import patch
+    from custom_components.adaptive_lighting.const import (
+        CONF_LUX_SENSOR,
+        CONF_LUX_MIN,
+        CONF_LUX_MAX,
+    )
+    
+    # Initially set up sensor with valid reading
+    hass.states.async_set("sensor.lux", "500")
+    
+    config = {
+        CONF_NAME: "test_lux",
+        CONF_LIGHTS: [],
+        CONF_LUX_SENSOR: "sensor.lux",
+        CONF_LUX_MIN: 0,
+        CONF_LUX_MAX: 1000,
+        CONF_MIN_BRIGHTNESS: 10,
+        CONF_MAX_BRIGHTNESS: 100,
+    }
+    
+    switch = await setup_switch(hass, config)
+    
+    # First adaptation with valid lux
+    noon = switch._sun_light_settings.sun.noon(datetime.date.today())
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = noon
+        context = switch.create_context("test")
+        await switch._update_attrs_and_maybe_adapt_lights(context=context)
+        await hass.async_block_till_done()
+        
+        brightness_with_lux = switch._settings[ATTR_BRIGHTNESS_PCT]
+    
+    # Now make sensor unavailable
+    hass.states.async_set("sensor.lux", "unavailable")
+    
+    # Second adaptation should fall back to sun
+    with patch("homeassistant.components.adaptive_lighting.switch.dt_util.utcnow") as mock_utcnow:
+        mock_utcnow.return_value = noon
+        context = switch.create_context("test")
+        await switch._update_attrs_and_maybe_adapt_lights(context=context)
+        await hass.async_block_till_done()
+        
+        brightness_with_sun = switch._settings[ATTR_BRIGHTNESS_PCT]
+    
+    # At noon, sun-based should be max (100), lux-based was ~55
+    assert brightness_with_sun == 100
+    assert 45 < brightness_with_lux < 65

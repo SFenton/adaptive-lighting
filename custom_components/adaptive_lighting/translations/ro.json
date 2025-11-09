@@ -15,6 +15,7 @@
       "init": {
         "data_description": {
           "brightness_mode_time_light": "(Se ignoră dacă `modul_de_luminozitate='implicit'`) Durată în secunde a modificării luminozităţii în sus/jos cand poziţia sorelui este înainte sau după răsărit/apus.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sunrise_offset": "Ajustați ora răsăritului cu un decalaj pozitiv sau negativ în secunde.⏰",
           "autoreset_control_seconds": "Resetare automată al controlului manual după un număr de secunde. Setaţi la 0 pentru a dezactiva.",
           "brightness_mode": "Mod de luminozitate de utilizat. Valorile posibile sunt: 'implicit', 'liniar' şi 'hiperbolic' ( ultilizează 'mod_luminozitate_timp_de_noapte' şi 'mod_luminozitate_timp_de_zi').",

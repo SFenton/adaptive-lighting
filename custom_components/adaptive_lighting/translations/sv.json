@@ -68,6 +68,7 @@
           "max_sunrise_time": "Ställ in den senaste virtuella soluppgångstiden (TT: MM: SS), vilket möjliggör tidigare soluppgångar. 🌅",
           "brightness_mode": "Ljusstyrkeinställing att använda. Möjliga värden är \"default\", \"linear\" och \"tanh\" (använder \"brightness_mode_time_dark\" och \"brightness_mode_time_light\"). 📈",
           "brightness_mode_time_light": "(Ignoreras om `brightness_mode='default'`) Varaktigheten i sekunder för att öka/minska ljusstyrkan efter/före soluppgång/solnedgång. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "brightness_mode_time_dark": "(Ignoreras om `brightness_mode='default'`) Varaktigheten i sekunder för att öka/minska ljusstyrkan efter/före soluppgång/solnedgång. 📈📉."
         }
       }

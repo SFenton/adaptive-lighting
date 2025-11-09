@@ -23,6 +23,7 @@
           "autoreset_control_seconds": "Resetear automáticamente el control manual tras `X` segundos. Poner a 0 para deshabilitar.",
           "brightness_mode": "Modo de brillo a usar. Valores posibles son: `default`, `linear` y `tanh` (usa`brightness_mode_time_dark` y `brightness_mode_time_light`). 📈",
           "brightness_mode_time_light": "(Ignorado si `brightness_mode='default'`) La duración, en segundos, de la transición del brillo después/antes del amanecer/atardecer. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "brightness_mode_time_dark": "(Ignorado si `brightness_mode='default'`) La duración, en segundos, de la transición del brillo después/antes del amanecer/atardecer. 📈📉.",
           "sunset_time": "Fijar una hora (HH:MM:SS) para el atardecer. 🌇",
           "min_sunset_time": "Define el atardecer virtual más temprano (HH:MM:SS), permitiendo atardeceres más tardíos. 🌇",

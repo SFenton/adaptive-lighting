@@ -217,6 +217,10 @@ class SunLightSettings:
     brightness_mode_time_dark: datetime.timedelta
     brightness_mode_time_light: datetime.timedelta
     brightness_mode: Literal["default", "linear", "tanh"] = "default"
+    invert_brightness: bool = False
+    lux_sensor: str | None = None
+    lux_min: int = 0
+    lux_max: int = 1000
     sunrise_offset: datetime.timedelta = datetime.timedelta()
     sunset_offset: datetime.timedelta = datetime.timedelta()
     timezone: datetime.tzinfo = UTC
@@ -245,6 +249,49 @@ class SunLightSettings:
             return self.max_brightness
         delta_brightness = self.max_brightness - self.min_brightness
         return (delta_brightness * (1 + sun_position)) + self.min_brightness
+
+    def _brightness_from_lux(self, lux: float) -> float:
+        """Calculate brightness percentage from lux reading.
+        
+        Linear interpolation: more lux = dimmer lights (inverse relationship).
+        - lux <= lux_min → max_brightness
+        - lux >= lux_max → min_brightness
+        - in between → linear interpolation
+        """
+        if lux <= self.lux_min:
+            return self.max_brightness
+        if lux >= self.lux_max:
+            return self.min_brightness
+        
+        # Linear interpolation (inverse): more lux = less brightness
+        lux_range = self.lux_max - self.lux_min
+        brightness_range = self.max_brightness - self.min_brightness
+        normalized_lux = (lux - self.lux_min) / lux_range
+        brightness = self.max_brightness - (normalized_lux * brightness_range)
+        
+        return max(self.min_brightness, min(self.max_brightness, brightness))
+
+    def _color_temp_from_lux(self, lux: float) -> int:
+        """Calculate color temperature from lux reading.
+        
+        Linear interpolation: more lux = cooler temperature.
+        - lux <= lux_min → min_color_temp (warm)
+        - lux >= lux_max → max_color_temp (cool)
+        - in between → linear interpolation
+        """
+        if lux <= self.lux_min:
+            return self.min_color_temp
+        if lux >= self.lux_max:
+            return self.max_color_temp
+        
+        # Linear interpolation: more lux = cooler temp
+        lux_range = self.lux_max - self.lux_min
+        temp_range = self.max_color_temp - self.min_color_temp
+        normalized_lux = (lux - self.lux_min) / lux_range
+        color_temp = self.min_color_temp + (normalized_lux * temp_range)
+        
+        # Round to nearest 5
+        return 5 * round(color_temp / 5)
 
     def _brightness_pct_tanh(self, dt: datetime.datetime) -> float:
         event, ts_event = self.sun.closest_event(dt)
@@ -296,18 +343,43 @@ class SunLightSettings:
             )
         return clamp(brightness, self.min_brightness, self.max_brightness)
 
-    def brightness_pct(self, dt: datetime.datetime, is_sleep: bool) -> float:
-        """Calculate the brightness in %."""
+    def brightness_pct(
+        self,
+        dt: datetime.datetime,
+        is_sleep: bool,
+        lux_reading: float | None = None,
+    ) -> float:
+        """Calculate the brightness in %.
+        
+        Args:
+            dt: The datetime to calculate brightness for
+            is_sleep: Whether sleep mode is active
+            lux_reading: Optional lux sensor reading. If provided and lux_sensor
+                        is configured, this overrides sun-based calculation.
+        """
         if is_sleep:
             return self.sleep_brightness
-        assert self.brightness_mode in ("default", "linear", "tanh")
-        if self.brightness_mode == "default":
-            return self._brightness_pct_default(dt)
-        if self.brightness_mode == "linear":
-            return self._brightness_pct_linear(dt)
-        if self.brightness_mode == "tanh":
-            return self._brightness_pct_tanh(dt)
-        return None
+        
+        # Lux sensor overrides sun position if configured and reading provided
+        if self.lux_sensor is not None and lux_reading is not None:
+            brightness = self._brightness_from_lux(lux_reading)
+        else:
+            # Fall back to sun-based calculation
+            assert self.brightness_mode in ("default", "linear", "tanh")
+            if self.brightness_mode == "default":
+                brightness = self._brightness_pct_default(dt)
+            elif self.brightness_mode == "linear":
+                brightness = self._brightness_pct_linear(dt)
+            elif self.brightness_mode == "tanh":
+                brightness = self._brightness_pct_tanh(dt)
+            else:
+                return None
+        
+        # Apply inversion if configured (after lux or sun calculation)
+        if self.invert_brightness:
+            brightness = self.max_brightness - (brightness - self.min_brightness)
+        
+        return brightness
 
     def color_temp_kelvin(self, sun_position: float) -> int:
         """Calculate the color temperature in Kelvin."""
@@ -324,20 +396,60 @@ class SunLightSettings:
         msg = "Should not happen"
         raise ValueError(msg)
 
+    def color_temp_kelvin_from_lux(
+        self,
+        lux_reading: float | None,
+        is_sleep: bool,
+    ) -> int:
+        """Calculate color temperature from lux reading or fall back to sun.
+        
+        Args:
+            lux_reading: Optional lux sensor reading
+            is_sleep: Whether sleep mode is active
+            
+        Returns:
+            Color temperature in Kelvin
+        """
+        if is_sleep:
+            return self.sleep_color_temp
+        
+        # Use lux sensor if configured and reading available
+        if self.lux_sensor is not None and lux_reading is not None:
+            return self._color_temp_from_lux(lux_reading)
+        
+        # Fall back to sun position
+        sun_position = self.sun.sun_position(utcnow())
+        return self.color_temp_kelvin(sun_position)
+
     def brightness_and_color(
         self,
         dt: datetime.datetime,
         is_sleep: bool,
+        lux_reading: float | None = None,
     ) -> dict[str, Any]:
-        """Calculate the brightness and color."""
+        """Calculate the brightness and color.
+        
+        Args:
+            dt: The datetime to calculate for
+            is_sleep: Whether sleep mode is active
+            lux_reading: Optional lux sensor reading for lux-based adaptation
+        """
         sun_position = self.sun.sun_position(dt)
         rgb_color: tuple[float, float, float]
         # Variable `force_rgb_color` is needed for RGB color after sunset (if enabled)
         force_rgb_color = False
-        brightness_pct = self.brightness_pct(dt, is_sleep)
+        brightness_pct = self.brightness_pct(dt, is_sleep, lux_reading)
+        
+        # Use lux-based color temp if available, otherwise use sun position
+        using_lux = self.lux_sensor is not None and lux_reading is not None
+        
         if is_sleep:
             color_temp_kelvin = self.sleep_color_temp
             rgb_color = self.sleep_rgb_color
+        elif using_lux:
+            # When using lux sensor, use lux-based color temperature
+            color_temp_kelvin = self._color_temp_from_lux(lux_reading)
+            rgb_color = color_temperature_to_rgb(color_temp_kelvin)
         elif (
             self.sleep_rgb_or_color_temp == "rgb_color"
             and self.adapt_until_sleep
@@ -377,13 +489,19 @@ class SunLightSettings:
         self,
         is_sleep,
         transition,
+        lux_reading: float | None = None,
     ) -> dict[str, float | int | tuple[float, float] | tuple[float, float, float]]:
         """Get all light settings.
 
         Calculating all values takes <0.5ms.
+        
+        Args:
+            is_sleep: Whether sleep mode is active
+            transition: Transition time in seconds
+            lux_reading: Optional lux sensor reading for lux-based adaptation
         """
         dt = utcnow() + timedelta(seconds=transition or 0)
-        return self.brightness_and_color(dt, is_sleep)
+        return self.brightness_and_color(dt, is_sleep, lux_reading)
 
 
 def find_a_b(x1: float, x2: float, y1: float, y2: float) -> tuple[float, float]:

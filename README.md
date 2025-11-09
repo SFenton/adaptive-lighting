@@ -133,6 +133,10 @@ The YAML and frontend configuration methods support all of the options listed be
 | `brightness_mode`              | Brightness mode to use. Possible values are `default`, `linear`, and `tanh` (uses `brightness_mode_time_dark` and `brightness_mode_time_light`). 📈                                                                                                                                                                                               | `default`      | one of `['default', 'linear', 'tanh']` |
 | `brightness_mode_time_dark`    | (Ignored if `brightness_mode='default'`) The duration in seconds to ramp up/down the brightness before/after sunrise/sunset. 📈📉                                                                                                                                                                                                                  | `900`          | `int`                                  |
 | `brightness_mode_time_light`   | (Ignored if `brightness_mode='default'`) The duration in seconds to ramp up/down the brightness after/before sunrise/sunset. 📈📉.                                                                                                                                                                                                                 | `3600`         | `int`                                  |
+| `invert_brightness`            | Invert the brightness adaptation: lights will be dimmer during the day and brighter at night. Perfect for rooms with lots of natural sunlight where you want to supplement rather than replace daylight. 🔄☀️                                                                                                                                       | `False`        | `bool`                                 |
+| `lux_sensor`                   | Optional: Use an ambient light sensor (lux) instead of sun position for adaptation. When configured, the sensor completely replaces sun-based calculations. Useful for rooms where actual light levels differ from solar position. 💡                                                                                                              | `None`         | `str` (entity_id)                      |
+| `lux_min`                      | Minimum lux level. Below this value, lights will be at maximum brightness. Only used when `lux_sensor` is configured. This defines the "dark" threshold. 🌑                                                                                                                                                                                       | `0`            | `int` 0-100000                         |
+| `lux_max`                      | Maximum lux level. Above this value, lights will be at minimum brightness. Only used when `lux_sensor` is configured. Values between `lux_min` and `lux_max` are interpolated linearly. This defines the "bright" threshold. 🌞                                                                                                                   | `1000`         | `int` 0-100000                         |
 | `take_over_control`            | Disable Adaptive Lighting if another source calls `light.turn_on` while lights are on and being adapted. Note that this calls `homeassistant.update_entity` every `interval`! 🔒                                                                                                                                                                  | `True`         | `bool`                                 |
 | `detect_non_ha_changes`        | Detects and halts adaptations for non-`light.turn_on` state changes. Needs `take_over_control` enabled. 🕵️ Caution: ⚠️ Some lights might falsely indicate an 'on' state, which could result in lights turning on unexpectedly. Disable this feature if you encounter such issues.                                                                | `False`        | `bool`                                 |
 | `autoreset_control_seconds`    | Automatically reset the manual control after a number of seconds. Set to 0 to disable. ⏲️                                                                                                                                                                                                                                                        | `0`            | `int` 0-31536000                       |
@@ -172,6 +176,10 @@ adaptive_lighting:
   take_over_control: true
   detect_non_ha_changes: false
   only_once: false
+  invert_brightness: false  # set to true for rooms with natural light
+  lux_sensor:  # Optional: use sensor.illuminance_sensor for lux-based adaptation
+  lux_min: 0  # lux level for maximum brightness
+  lux_max: 1000  # lux level for minimum brightness
 
 ```
 
@@ -333,6 +341,120 @@ iphone_carly_wakeup:
   icon: mdi:weather-sunset
   max: 10
 ```
+
+</details>
+
+<details>
+<summary>Use <code>invert_brightness</code> for rooms with natural sunlight to supplement daylight instead of replacing it.</summary>
+
+Perfect for home offices, living rooms, or any space with large windows where you want lights to provide supplemental lighting that works **with** natural sunlight, not against it.
+
+```yaml
+# Example: Office with large windows
+adaptive_lighting:
+- name: "office"
+  lights:
+    - light.office_desk_lamp
+    - light.office_ceiling
+  invert_brightness: true  # Lights dim during the day, brighten at night
+  min_brightness: 1
+  max_brightness: 100
+  # During the day (bright sunlight): lights stay at min_brightness (1%)
+  # At night (no sunlight): lights ramp up to max_brightness (100%)
+```
+
+This configuration ensures your artificial lights don't compete with natural daylight. Instead, they supplement when needed:
+- ☀️ **Daytime (noon):** Lights at minimum brightness (or off) - natural sunlight is sufficient
+- 🌙 **Nighttime (midnight):** Lights at maximum brightness - no natural light available
+- 🌅 **Sunrise/Sunset:** Smooth transitions as natural light changes
+
+**Use Cases:**
+- Home offices with windows
+- Living rooms with large glass doors
+- Kitchens with skylights
+- Reading rooms with natural lighting
+- Any space where you want to **supplement** rather than **replace** natural daylight
+
+</details>
+
+<details>
+<summary>Use <code>lux_sensor</code> for precise light adaptation based on actual ambient light levels.</summary>
+
+When you configure a lux sensor, Adaptive Lighting uses **actual measured light levels** instead of sun position. This provides more accurate adaptation based on real-world conditions like weather, window coverings, and room-specific lighting.
+
+**How it works:**
+- 🌑 **Low lux (≤ lux_min):** Lights at maximum brightness
+- 🌞 **High lux (≥ lux_max):** Lights at minimum brightness  
+- 📊 **In between:** Linear interpolation from bright to dim
+
+```yaml
+# Example 1: Living room with lux sensor
+adaptive_lighting:
+- name: "living_room"
+  lights:
+    - light.living_room_ceiling
+    - light.living_room_lamp
+  lux_sensor: sensor.living_room_illuminance
+  lux_min: 50      # Below 50 lux → max brightness
+  lux_max: 400     # Above 400 lux → min brightness
+  min_brightness: 20
+  max_brightness: 100
+```
+
+```yaml
+# Example 2: Basement with lux sensor (always dark)
+adaptive_lighting:
+- name: "basement"
+  lights:
+    - light.basement_ceiling
+  lux_sensor: sensor.basement_illuminance
+  lux_min: 0       # Very low threshold
+  lux_max: 100     # Low max (basement rarely bright)
+  min_brightness: 30
+  max_brightness: 100
+```
+
+```yaml
+# Example 3: Kitchen with lux + inversion (combines both features)
+adaptive_lighting:
+- name: "kitchen"
+  lights:
+    - light.kitchen_ceiling
+    - light.kitchen_under_cabinet
+  lux_sensor: sensor.kitchen_illuminance
+  lux_min: 100
+  lux_max: 800
+  invert_brightness: true  # Inverts the lux-based calculation
+  min_brightness: 10
+  max_brightness: 90
+  # Result: When lux is low (dark), normal would be bright, inverted is dim
+  #         When lux is high (bright), normal would be dim, inverted is bright
+```
+
+**Compatible Sensors:**
+- Aqara Motion Sensors (with illuminance)
+- Philips Hue Motion Sensors
+- IKEA Trådfri Motion Sensors
+- Zigbee2MQTT illuminance sensors
+- Any Home Assistant sensor with lux/illuminance readings
+
+**Calibration Tips:**
+1. **Determine your lux_min:** Measure lux when you want lights at 100%
+2. **Determine your lux_max:** Measure lux when you want lights at minimum
+3. **Monitor for a few days:** Adjust thresholds based on real usage
+4. **Use Developer Tools → States** to see your sensor's lux readings
+
+**When lux sensor is unavailable:**
+- Adaptive Lighting automatically falls back to sun-based adaptation
+- No errors or interruptions
+- Seamless transition when sensor becomes available again
+
+**Use Cases:**
+- Rooms with inconsistent natural light (weather, trees, clouds)
+- Windowless rooms with variable lighting (basements, bathrooms)
+- Rooms where window coverings change throughout the day
+- Multi-zone homes where sun position doesn't reflect actual light levels
+- Accurate adaptation regardless of geographic location or time zone
 
 </details>
 

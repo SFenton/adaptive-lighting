@@ -62,6 +62,7 @@
           "min_sunset_time": "Définir l'heure virtuelle de coucher du soleil la plus précoce (HH:MM:SS), permettant des couchers de soleil tardifs. 🌇",
           "sleep_rgb_color": "Couleur RGB en mode nuit (utilisée lorsque \"sleep_rgb_or_color_temp\" est \"rgb_color\"). 🌈",
           "brightness_mode_time_light": "(Ignoré si \"brightness_mode='default'\") La durée en secondes pour augmenter/diminuer progressivement la luminosité après/avant le lever/coucher du soleil. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sunset_time": "Définir une heure fixe (HH:MM:SS) pour le coucher du soleil. 🌇",
           "sunrise_time": "Définir une heure fixe (HH:MM:SS) pour le lever du soleil. 🌅",
           "brightness_mode_time_dark": "(Ignoré si \"brightness_mode='default'\") La durée en secondes pour augmenter/diminuer progressivement la luminosité après/avant le lever/coucher du soleil. 📈📉.",

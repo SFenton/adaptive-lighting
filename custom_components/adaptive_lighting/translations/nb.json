@@ -68,6 +68,7 @@
           "adapt_delay": "Ventetid (sekunder) mellom at lyset skrues på og Adaptive Lightning sender endringer. Kan hjelpe til for å unngå blinking.",
           "autoreset_control_seconds": "Automatisk reset manuell kontroll etter et gitt antall sekunder. Sett til 0 for å skru av.",
           "brightness_mode_time_light": "(Ignorere hvis `brightness_mode='default'`) Varigheten i sekunder for å justere opp/ned lysstyrken før/etter soloppgang/solnedgang.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "brightness_mode_time_dark": "(Ignorere hvis `brightness_mode='default'`) Varigheten i sekunder for å justere opp/ned lysstyrken før/etter soloppgang/solnedgang."
         }
       }

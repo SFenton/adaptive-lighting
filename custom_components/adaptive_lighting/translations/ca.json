@@ -21,6 +21,7 @@
           "sunset_time": "Indica una hora fixa (HH:MM:SS) per a la posta de sol. 🌇",
           "brightness_mode_time_dark": "(S'ignora si `brightness_mode='default'`) La durada en segons de la variació de la brillantor abans/despres de la sortida/posta de sol. 📈📉.",
           "brightness_mode_time_light": "(S'ignora si `brightness_mode='default'`) La durada en segons de la variació de la brillantor abans/despres de la sortida/posta de sol. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "adapt_delay": "Temps d'espera (en segons) entre l'encesa de la llum i els canvis per part d'Adaptive Lighting. Pot ajudar a evitar els parpalleigs. ⏲️",
           "min_sunrise_time": "Defineix la sortida de sol virtual més primerenca (HH:MM:SS), tot permetent sortides de sol posteriors. 🌅",
           "max_sunrise_time": "Defineix la sortida de sol virtual més tardana (HH:MM:SS), tot permetent sortides de sol abans. 🌅",

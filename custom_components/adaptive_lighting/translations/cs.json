@@ -68,6 +68,7 @@
           "transition": "Doba trvání přechodu změny světel v sekundách. 🕑",
           "brightness_mode": "Výběr režimu jasu. Možné hodnoty jsou `default`, `linear` a `tanh` (používá `brightness_mode_time_dark` a `brightness_mode_time_light`). 📈",
           "brightness_mode_time_light": "(Ignorováno, pokud `brightness_mode='default'`) Doba trvání v sekundách pro zvýšení/snížení jasu po/před východem/západem slunce. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sunset_offset": "Upravte čas západu slunce o sekundy dopředu nebo dozadu. ⏰",
           "sunset_time": "Nastavit pevný čas (HH:MM:SS) pro západ slunce. 🌅",
           "max_sunset_time": "Nastavte nejpozdější virtuální čas západu slunce (HH:MM:SS), což umožňuje dřívější západ slunce. 🌅",

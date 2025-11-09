@@ -67,6 +67,7 @@
           "sunset_offset": "Dostosuj czas zachodu słońca - przesunięcie o +/- sekund. ⏰",
           "brightness_mode_time_dark": "(Pomijany, gdy `brightness_mode='default'`). Czas w sekundach, kiedy jasność będzie zwiększana przed wschodem słońca/zmniejszana po zachodzie słońca. 📈📉",
           "brightness_mode_time_light": "(Pomijany, gdy `brightness_mode='default'`). Czas w sekundach, kiedy jasność będzie zwiększana po wschodzie słońca/zmniejszana przed zachodem słońca. 📈📉",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "autoreset_control_seconds": "Czas, po którym manualna kontrola zostanie wyłączona (w sekundach). Ustaw 0, aby wyłączyć. ⏲️",
           "send_split_delay": "Opóźnienie (w ms) pomiędzy `separate_turn_on_commands` dla świateł, które nie akceptują jednoczesnego ustawiania jasności i koloru. ⏲️",
           "adapt_delay": "Czas (w sekundach) pomiędzy włączeniem światła, a rozpoczęciem adaptowania przez Adaptacyjne oświetlenie. Może pomóc zredukować migotanie. ⏲️"

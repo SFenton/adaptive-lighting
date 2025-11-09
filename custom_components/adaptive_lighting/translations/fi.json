@@ -152,6 +152,7 @@
           "sleep_transition": "Siirtymän kesto, kun \"lepotila\" vaihdetaan sekunneiksi. 😴",
           "interval": "Tiheys valojen mukauttamiseen sekunneissa. 🔄",
           "brightness_mode_time_light": "(Ohitetaan, jos `brightness_mode='default'`) Kesto sekunteina kirkkauden lisäämiseen/vähentämiseen auringonnousun/auringonlaskun jälkeen/ennen. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sleep_rgb_color": "RGB-väri lepotilassa (käytetään, kun `sleep_rgb_or_color_temp` on \"rgb_color\"). 🌈",
           "sunrise_time": "Aseta kiinteä aika (TT:MM:SS) auringonnousulle. 🌅",
           "sunset_time": "Aseta kiinteä aika (TT:MM:SS) auringonlaskulle. 🌇",

@@ -71,6 +71,7 @@
           "adapt_delay": "Wachttijd in (seconden) tussen het aanzetten van de lamp en het toepassen van Adaptieve verlichting veranderingen. Het kan helpen om knipperen tegen te gaan. ⏲️",
           "sleep_rgb_color": "RGB kleur in slaapstand (wordt gebruikt wanneer `sleep_rgb_or_color_temp` gelijk is aan \"rgb_color\"). 🌈",
           "brightness_mode_time_light": "(Negeer wanneer `brightness_mode='default'`) De duur in seconden van oplopende/aflopende helderheid na/voor zonsopkomst/zonsondergang. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sunset_time": "Stel een vaste tijd (HH:MM:SS) in voor zonsondergang. 🌇",
           "max_sunset_time": "Stel de tijd (HH:MM:SS) in voor de laatste virtuele zonsondergang, maakt eerdere zonsondergangen mogelijk. 🌇",
           "sunrise_time": "Stel een vaste tijd (HH:MM:SS) in voor zonsopkomst. 🌅",

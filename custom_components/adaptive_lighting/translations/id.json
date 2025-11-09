@@ -151,6 +151,7 @@
           "transition": "Durasi transisi saat lampu berganti, dalam hitungan detik. 🕑",
           "brightness_mode": "Mode kecerahan untuk digunakan. Nilai yang memungkinkan adalah `default`, `linear`, dan `tanh` (menggunakan `brightness_mode_time_dark` dan `brightness_mode_time_light`). 📈",
           "brightness_mode_time_light": "(Ignored if `brightness_mode='default'`) Durasi dalam hitungan detik untuk meningkatkan/menurunkan kecerahan setelah/sebelum matahari terbit/terbenam. 📈📉.",
+          "invert_brightness": "Reverse brightness curve: lights are dimmer during the day and brighter at night. Perfect for rooms with natural sunlight where you want to supplement rather than replace daylight. 🔄☀️",
           "sunset_offset": "Sesuaikan waktu matahari terbenam dengan offset positif atau negatif dalam hitungan detik. ⏰",
           "sunset_time": "Tetapkan waktu tetap (HH:MM:SS) untuk matahari terbenam. 🌇",
           "max_sunset_time": "Atur waktu matahari terbenam virtual terkini (HH:MM:SS), memungkinkan matahari terbenam lebih cepat. 🌇",
